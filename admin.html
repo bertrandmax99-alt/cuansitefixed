@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CuanSite Admin Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        :root {
+            --gold: #D4AF37;
+            --gold-light: #F5D060;
+            --gold-dark: #A68A2A;
+            --bg: #0A0A0A;
+            --bg-2: #111;
+            --bg-3: #1A1A1A;
+            --bg-4: #222;
+            --text: #F0EDE6;
+            --text-dim: #999;
+            --muted: #666;
+            --border: rgba(212,175,55,.15);
+            --danger: #ef4444;
+            --success: #22c55e;
+            --radius: 10px;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Inter',-apple-system,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700;900&family=Space+Mono:wght@400;700&display=swap');
+
+        /* ── LOGIN ────────────────────────────────── */
+        .login-screen {
+            display:flex; align-items:center; justify-content:center;
+            min-height:100vh;
+            background:var(--bg);
+        }
+        .login-box {
+            background:var(--bg-2);
+            border:1px solid var(--border);
+            border-radius:16px;
+            padding:48px 40px;
+            width:100%; max-width:400px;
+            text-align:center;
+        }
+        .login-logo {
+            font-family:'Playfair Display',serif;
+            font-size:32px; font-weight:900;
+            margin-bottom:8px;
+        }
+        .login-logo span { color:var(--gold); }
+        .login-sub { font-size:13px; color:var(--muted); margin-bottom:32px; }
+        .login-box input {
+            width:100%; padding:14px 18px;
+            background:var(--bg-3); border:1px solid var(--border);
+            border-radius:8px; color:var(--text); font-size:14px;
+            margin-bottom:16px; outline:none;
+            transition:border-color .3s;
+        }
+        .login-box input:focus { border-color:var(--gold); }
+        .login-box button {
+            width:100%; padding:14px;
+            background:linear-gradient(135deg,var(--gold-dark),var(--gold-light));
+            color:#000; font-weight:700; font-size:14px;
+            border:none; border-radius:8px; cursor:pointer;
+            transition:opacity .3s;
+        }
+        .login-box button:hover { opacity:.9; }
+        .login-error { color:var(--danger); font-size:12px; margin-top:12px; display:none; }
+
+        /* ── LAYOUT ───────────────────────────────── */
+        .app { display:flex; min-height:100vh; }
+
+        .sidebar {
+            width:260px; min-width:260px;
+            background:var(--bg-2);
+            border-right:1px solid var(--border);
+            padding:24px 0;
+            display:flex; flex-direction:column;
+            position:fixed; top:0; bottom:0; left:0;
+            z-index:100;
+        }
+        .sidebar-logo {
+            font-family:'Playfair Display',serif;
+            font-size:24px; font-weight:900;
+            padding:0 24px; margin-bottom:8px;
+        }
+        .sidebar-logo span { color:var(--gold); }
+        .sidebar-label {
+            font-size:10px; color:var(--muted); padding:0 24px;
+            letter-spacing:2px; text-transform:uppercase;
+            margin-bottom:24px;
+        }
+
+        .sidebar-nav { flex:1; overflow-y:auto; }
+        .sidebar-nav a {
+            display:flex; align-items:center; gap:12px;
+            padding:12px 24px;
+            color:var(--text-dim); text-decoration:none;
+            font-size:13px; font-weight:500;
+            transition:all .2s; border-left:3px solid transparent;
+        }
+        .sidebar-nav a:hover { background:rgba(212,175,55,.04); color:var(--text); }
+        .sidebar-nav a.active {
+            color:var(--gold); background:rgba(212,175,55,.06);
+            border-left-color:var(--gold);
+        }
+        .sidebar-nav a i { width:18px; text-align:center; font-size:14px; }
+
+        .sidebar-bottom {
+            padding:16px 24px;
+            border-top:1px solid var(--border);
+        }
+        .sidebar-bottom a {
+            display:flex; align-items:center; gap:8px;
+            color:var(--text-dim); text-decoration:none;
+            font-size:13px; padding:8px 0;
+            transition:color .2s;
+        }
+        .sidebar-bottom a:hover { color:var(--danger); }
+
+        .main {
+            flex:1; margin-left:260px;
+            padding:32px 40px;
+            max-width:1000px;
+        }
+
+        .page-title {
+            font-family:'Playfair Display',serif;
+            font-size:28px; font-weight:900;
+            margin-bottom:8px;
+        }
+        .page-sub { font-size:13px; color:var(--muted); margin-bottom:32px; }
+
+        /* ── FORM ELEMENTS ────────────────────────── */
+        .card {
+            background:var(--bg-2);
+            border:1px solid var(--border);
+            border-radius:var(--radius);
+            padding:28px;
+            margin-bottom:24px;
+        }
+        .card-title {
+            font-size:16px; font-weight:700;
+            margin-bottom:20px;
+            display:flex; align-items:center; gap:8px;
+        }
+        .card-title i { color:var(--gold); font-size:14px; }
+
+        .form-group { margin-bottom:18px; }
+        .form-group label {
+            display:block; font-size:12px; font-weight:600;
+            color:var(--text-dim); margin-bottom:6px;
+            letter-spacing:.5px; text-transform:uppercase;
+        }
+        .form-group input, .form-group textarea, .form-group select {
+            width:100%; padding:12px 14px;
+            background:var(--bg-3); border:1px solid rgba(255,255,255,.06);
+            border-radius:8px; color:var(--text); font-size:14px;
+            font-family:inherit; outline:none;
+            transition:border-color .3s;
+        }
+        .form-group input:focus, .form-group textarea:focus { border-color:var(--gold); }
+        .form-group textarea { resize:vertical; min-height:80px; }
+        .form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+        .form-row-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; }
+
+        .btn {
+            display:inline-flex; align-items:center; gap:8px;
+            padding:10px 22px; border-radius:8px;
+            font-size:13px; font-weight:600;
+            cursor:pointer; border:none;
+            transition:all .3s; font-family:inherit;
+        }
+        .btn-gold {
+            background:linear-gradient(135deg,var(--gold-dark),var(--gold-light));
+            color:#000;
+        }
+        .btn-gold:hover { opacity:.9; }
+        .btn-ghost {
+            background:transparent; border:1px solid var(--border);
+            color:var(--text-dim);
+        }
+        .btn-ghost:hover { border-color:var(--gold); color:var(--gold); }
+        .btn-danger {
+            background:rgba(239,68,68,.1); border:1px solid rgba(239,68,68,.2);
+            color:var(--danger);
+        }
+        .btn-danger:hover { background:rgba(239,68,68,.2); }
+        .btn-sm { padding:7px 14px; font-size:12px; }
+        .btn-row { display:flex; gap:10px; margin-top:20px; }
+
+        /* ── ITEMS LIST ───────────────────────────── */
+        .item-card {
+            background:var(--bg-3);
+            border:1px solid rgba(255,255,255,.04);
+            border-radius:8px;
+            padding:18px;
+            margin-bottom:12px;
+            display:flex; align-items:flex-start; justify-content:space-between; gap:16px;
+        }
+        .item-card:hover { border-color:var(--border); }
+        .item-info h4 { font-size:14px; font-weight:600; margin-bottom:4px; }
+        .item-info p { font-size:12px; color:var(--muted); line-height:1.5; }
+        .item-actions { display:flex; gap:6px; flex-shrink:0; }
+
+        /* ── PORTFOLIO SPECIAL ────────────────────── */
+        .port-admin-card {
+            background:var(--bg-3);
+            border:1px solid rgba(255,255,255,.04);
+            border-radius:var(--radius);
+            overflow:hidden;
+            margin-bottom:16px;
+        }
+        .port-admin-card:hover { border-color:var(--border); }
+        .port-admin-header {
+            display:flex; justify-content:space-between; align-items:center;
+            padding:16px 20px;
+            border-bottom:1px solid rgba(255,255,255,.04);
+        }
+        .port-admin-header h4 { font-size:14px; font-weight:600; }
+        .port-admin-header .pill {
+            font-size:10px; background:rgba(212,175,55,.08);
+            border:1px solid var(--border); padding:3px 10px;
+            border-radius:100px; color:var(--gold);
+        }
+        .port-admin-body { padding:20px; }
+        .port-admin-meta { font-size:12px; color:var(--muted); margin-top:6px; }
+        .port-admin-thumb {
+            width:60px; height:60px; border-radius:8px;
+            background:var(--bg-4); display:flex; align-items:center; justify-content:center;
+            font-size:20px; color:var(--muted);
+            overflow:hidden; flex-shrink:0;
+        }
+        .port-admin-thumb img { width:100%; height:100%; object-fit:cover; }
+
+        /* ── TOAST ────────────────────────────────── */
+        .toast {
+            position:fixed; bottom:28px; right:28px;
+            padding:14px 24px; border-radius:10px;
+            font-size:13px; font-weight:600;
+            z-index:9999;
+            transform:translateY(100px); opacity:0;
+            transition:all .4s cubic-bezier(.25,.46,.45,.94);
+        }
+        .toast.show { transform:translateY(0); opacity:1; }
+        .toast-success { background:var(--success); color:#000; }
+        .toast-error { background:var(--danger); color:#fff; }
+
+        /* ── MODAL ────────────────────────────────── */
+        .modal-overlay {
+            position:fixed; inset:0;
+            background:rgba(0,0,0,.7);
+            backdrop-filter:blur(6px);
+            z-index:5000;
+            display:flex; align-items:center; justify-content:center;
+            opacity:0; pointer-events:none;
+            transition:opacity .3s;
+        }
+        .modal-overlay.open { opacity:1; pointer-events:all; }
+        .modal {
+            background:var(--bg-2);
+            border:1px solid var(--border);
+            border-radius:16px;
+            padding:32px;
+            width:100%; max-width:560px;
+            max-height:85vh; overflow-y:auto;
+        }
+        .modal-title {
+            font-family:'Playfair Display',serif;
+            font-size:22px; font-weight:900;
+            margin-bottom:24px;
+        }
+
+        /* ── FILE INPUT ───────────────────────────── */
+        .file-drop {
+            border:2px dashed var(--border);
+            border-radius:8px;
+            padding:24px;
+            text-align:center;
+            cursor:pointer;
+            transition:border-color .3s;
+        }
+        .file-drop:hover { border-color:var(--gold); }
+        .file-drop i { font-size:24px; color:var(--muted); }
+        .file-drop p { font-size:12px; color:var(--muted); margin-top:8px; }
+        .file-drop input { display:none; }
+        .file-preview { margin-top:12px; }
+        .file-preview img { max-width:200px; border-radius:8px; border:1px solid var(--border); }
+
+        /* ── RESPONSIVE ───────────────────────────── */
+        @media (max-width:768px) {
+            .sidebar { width:100%; position:relative; min-width:auto; }
+            .main { margin-left:0; padding:20px; }
+            .app { flex-direction:column; }
+            .form-row, .form-row-3 { grid-template-columns:1fr; }
+        }
+
+        /* Hide sections */
+        .section-panel { display:none; }
+        .section-panel.active { display:block; }
+    </style>
+</head>
+<body>
+
+<!-- ─── LOGIN SCREEN ─────────────────────────── -->
+<div class="login-screen" id="loginScreen">
+    <div class="login-box">
+        <div class="login-logo">Cuan<span>Site</span></div>
+        <div class="login-sub">Admin Dashboard</div>
+        <input type="password" id="loginPassword" placeholder="Masukkan password admin..." onkeydown="if(event.key==='Enter')doLogin()">
+        <button onclick="doLogin()">Masuk</button>
+        <div class="login-error" id="loginError">Password salah!</div>
+    </div>
+</div>
+
+<!-- ─── APP ───────────────────────────────────── -->
+<div class="app" id="appContainer" style="display:none;">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-logo">Cuan<span>Site</span></div>
+        <div class="sidebar-label">Admin Dashboard</div>
+        <nav class="sidebar-nav">
+            <a href="#" data-section="hero" class="active"><i class="fas fa-home"></i> Hero</a>
+            <a href="#" data-section="about"><i class="fas fa-info-circle"></i> Tentang</a>
+            <a href="#" data-section="services"><i class="fas fa-concierge-bell"></i> Layanan</a>
+            <a href="#" data-section="why"><i class="fas fa-star"></i> Kenapa Kami</a>
+            <a href="#" data-section="process"><i class="fas fa-tasks"></i> Proses</a>
+            <a href="#" data-section="portfolio"><i class="fas fa-briefcase"></i> Portfolio</a>
+            <a href="#" data-section="testimonials"><i class="fas fa-quote-left"></i> Testimoni</a>
+            <a href="#" data-section="cta"><i class="fas fa-bullhorn"></i> CTA</a>
+            <a href="#" data-section="socials"><i class="fas fa-share-alt"></i> Sosial Media</a>
+            <a href="#" data-section="settings"><i class="fas fa-cog"></i> Pengaturan</a>
+        </nav>
+        <div class="sidebar-bottom">
+            <a href="/" target="_blank"><i class="fas fa-external-link-alt"></i> Lihat Website</a>
+            <a href="#" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main">
+
+        <!-- HERO -->
+        <div class="section-panel active" id="panel-hero">
+            <div class="page-title">Hero Section</div>
+            <div class="page-sub">Kelola tampilan utama website</div>
+            <div class="card">
+                <div class="card-title"><i class="fas fa-edit"></i> Konten Hero</div>
+                <div class="form-group">
+                    <label>Badge Text</label>
+                    <input type="text" id="hero-badge">
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Judul Baris 1</label><input type="text" id="hero-title_1"></div>
+                    <div class="form-group"><label>Judul Baris 2</label><input type="text" id="hero-title_2"></div>
+                </div>
+                <div class="form-group"><label>Judul Baris 3 (Gold/Italic)</label><input type="text" id="hero-title_3"></div>
+                <div class="form-group"><label>Subtitle</label><textarea id="hero-subtitle"></textarea></div>
+                <div class="form-row">
+                    <div class="form-group"><label>Tombol Utama</label><input type="text" id="hero-btn_primary"></div>
+                    <div class="form-group"><label>Tombol Sekunder</label><input type="text" id="hero-btn_secondary"></div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-title"><i class="fas fa-chart-bar"></i> Statistik</div>
+                <div class="form-row">
+                    <div class="form-group"><label>Stat 1 Angka</label><input type="text" id="hero-stat_1_num"></div>
+                    <div class="form-group"><label>Stat 1 Label</label><input type="text" id="hero-stat_1_label"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Stat 2 Angka</label><input type="text" id="hero-stat_2_num"></div>
+                    <div class="form-group"><label>Stat 2 Label</label><input type="text" id="hero-stat_2_label"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Stat 3 Angka</label><input type="text" id="hero-stat_3_num"></div>
+                    <div class="form-group"><label>Stat 3 Label</label><input type="text" id="hero-stat_3_label"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Stat 4 Angka</label><input type="text" id="hero-stat_4_num"></div>
+                    <div class="form-group"><label>Stat 4 Label</label><input type="text" id="hero-stat_4_label"></div>
+                </div>
+            </div>
+            <div class="btn-row"><button class="btn btn-gold" onclick="saveHero()"><i class="fas fa-save"></i> Simpan Hero</button></div>
+        </div>
+
+        <!-- ABOUT -->
+        <div class="section-panel" id="panel-about">
+            <div class="page-title">Tentang / Cerita</div>
+            <div class="page-sub">Kelola bagian tentang agency</div>
+            <div class="card">
+                <div class="card-title"><i class="fas fa-book-open"></i> Konten Tentang</div>
+                <div class="form-group"><label>Eyebrow</label><input type="text" id="about-eyebrow"></div>
+                <div class="form-row">
+                    <div class="form-group"><label>Judul Baris 1</label><input type="text" id="about-title_1"></div>
+                    <div class="form-group"><label>Judul Baris 2 (Gold)</label><input type="text" id="about-title_2"></div>
+                </div>
+                <div class="form-group"><label>Deskripsi</label><textarea id="about-description" rows="4"></textarea></div>
+            </div>
+            <div class="card">
+                <div class="card-title"><i class="fas fa-lightbulb"></i> Filosofi Card</div>
+                <div class="form-group"><label>Label</label><input type="text" id="about-philosophy_label"></div>
+                <div class="form-group"><label>Judul</label><input type="text" id="about-philosophy_title"></div>
+                <div class="form-group"><label>Deskripsi</label><textarea id="about-philosophy_desc"></textarea></div>
+            </div>
+            <div class="card">
+                <div class="card-title"><i class="fas fa-tag"></i> Badge Floating</div>
+                <div class="form-row">
+                    <div class="form-group"><label>Badge Atas - Judul</label><input type="text" id="about-badge_top_title"></div>
+                    <div class="form-group"><label>Badge Atas - Desc</label><input type="text" id="about-badge_top_desc"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Badge Bawah - Judul</label><input type="text" id="about-badge_bot_title"></div>
+                    <div class="form-group"><label>Badge Bawah - Desc</label><input type="text" id="about-badge_bot_desc"></div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-title"><i class="fas fa-check-circle"></i> 3 Fitur</div>
+                <div class="form-row">
+                    <div class="form-group"><label>Fitur 1 Judul</label><input type="text" id="about-feat_1_title"></div>
+                    <div class="form-group"><label>Fitur 1 Deskripsi</label><input type="text" id="about-feat_1_desc"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Fitur 2 Judul</label><input type="text" id="about-feat_2_title"></div>
+                    <div class="form-group"><label>Fitur 2 Deskripsi</label><input type="text" id="about-feat_2_desc"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Fitur 3 Judul</label><input type="text" id="about-feat_3_title"></div>
+                    <div class="form-group"><label>Fitur 3 Deskripsi</label><input type="text" id="about-feat_3_desc"></div>
+                </div>
+            </div>
+            <div class="btn-row"><button class="btn btn-gold" onclick="saveAbout()"><i class="fas fa-save"></i> Simpan Tentang</button></div>
+        </div>
+
+        <!-- SERVICES -->
+        <div class="section-panel" id="panel-services">
+            <div class="page-title">Layanan</div>
+            <div class="page-sub">Kelola daftar layanan</div>
+            <div class="btn-row" style="margin-bottom:20px;"><button class="btn btn-gold" onclick="openServiceModal()"><i class="fas fa-plus"></i> Tambah Layanan</button></div>
+            <div id="servicesList"></div>
+        </div>
+
+        <!-- WHY US -->
+        <div class="section-panel" id="panel-why">
+            <div class="page-title">Kenapa Kami</div>
+            <div class="page-sub">Kelola alasan mengapa klien harus pilih CuanSite</div>
+            <div class="btn-row" style="margin-bottom:20px;"><button class="btn btn-gold" onclick="openWhyModal()"><i class="fas fa-plus"></i> Tambah Item</button></div>
+            <div id="whyList"></div>
+        </div>
+
+        <!-- PROCESS -->
+        <div class="section-panel" id="panel-process">
+            <div class="page-title">Proses Kerja</div>
+            <div class="page-sub">Kelola langkah-langkah proses kerja</div>
+            <div class="btn-row" style="margin-bottom:20px;"><button class="btn btn-gold" onclick="openProcessModal()"><i class="fas fa-plus"></i> Tambah Step</button></div>
+            <div id="processList"></div>
+        </div>
+
+        <!-- PORTFOLIO -->
+        <div class="section-panel" id="panel-portfolio">
+            <div class="page-title">Portfolio</div>
+            <div class="page-sub">Kelola proyek-proyek yang sudah dikerjakan. Tambah, edit, atau hapus portfolio klien.</div>
+            <div class="btn-row" style="margin-bottom:20px;"><button class="btn btn-gold" onclick="openPortfolioModal()"><i class="fas fa-plus"></i> Tambah Portfolio</button></div>
+            <div id="portfolioList"></div>
+        </div>
+
+        <!-- TESTIMONIALS -->
+        <div class="section-panel" id="panel-testimonials">
+            <div class="page-title">Testimoni</div>
+            <div class="page-sub">Kelola testimoni dari klien</div>
+            <div class="btn-row" style="margin-bottom:20px;"><button class="btn btn-gold" onclick="openTestimonialModal()"><i class="fas fa-plus"></i> Tambah Testimoni</button></div>
+            <div id="testimonialsList"></div>
+        </div>
+
+        <!-- CTA -->
+        <div class="section-panel" id="panel-cta">
+            <div class="page-title">Call to Action</div>
+            <div class="page-sub">Kelola bagian CTA di bawah website</div>
+            <div class="card">
+                <div class="form-group"><label>Eyebrow</label><input type="text" id="cta-eyebrow"></div>
+                <div class="form-row">
+                    <div class="form-group"><label>Judul Baris 1</label><input type="text" id="cta-title_1"></div>
+                    <div class="form-group"><label>Judul Baris 2 (Italic)</label><input type="text" id="cta-title_2"></div>
+                </div>
+                <div class="form-group"><label>Subtitle</label><textarea id="cta-subtitle"></textarea></div>
+            </div>
+            <div class="btn-row"><button class="btn btn-gold" onclick="saveCta()"><i class="fas fa-save"></i> Simpan CTA</button></div>
+        </div>
+
+        <!-- SOCIALS -->
+        <div class="section-panel" id="panel-socials">
+            <div class="page-title">Sosial Media</div>
+            <div class="page-sub">Kelola link sosial media agency</div>
+            <div class="card">
+                <div class="form-group"><label>WhatsApp (nomor tanpa +)</label><input type="text" id="socials-whatsapp" placeholder="6285136910032"></div>
+                <div class="form-group"><label>Instagram (username tanpa @)</label><input type="text" id="socials-instagram" placeholder="cuansite.id"></div>
+                <div class="form-group"><label>TikTok (username tanpa @)</label><input type="text" id="socials-tiktok" placeholder="cuansite.id"></div>
+                <div class="form-group"><label>Nomor Telepon (tampilan)</label><input type="text" id="socials-phone_display" placeholder="+62 851-3691-0032"></div>
+            </div>
+            <div class="btn-row"><button class="btn btn-gold" onclick="saveSocials()"><i class="fas fa-save"></i> Simpan Sosial Media</button></div>
+        </div>
+
+        <!-- SETTINGS -->
+        <div class="section-panel" id="panel-settings">
+            <div class="page-title">Pengaturan</div>
+            <div class="page-sub">Ganti password admin</div>
+            <div class="card">
+                <div class="form-group"><label>Password Saat Ini</label><input type="password" id="settings-current"></div>
+                <div class="form-group"><label>Password Baru</label><input type="password" id="settings-new"></div>
+                <div class="form-group"><label>Konfirmasi Password Baru</label><input type="password" id="settings-confirm"></div>
+            </div>
+            <div class="btn-row"><button class="btn btn-gold" onclick="changePassword()"><i class="fas fa-key"></i> Ganti Password</button></div>
+        </div>
+
+    </main>
+</div>
+
+<!-- ─── MODAL ─────────────────────────────────── -->
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal" id="modalContent"></div>
+</div>
+
+<!-- ─── TOAST ─────────────────────────────────── -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── UTILS ───────────────────────────────────────────────────────
+function toast(msg, type='success') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast toast-' + type + ' show';
+    setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+async function api(url, opts = {}) {
+    const res = await fetch(url, {
+        headers: { 'Content-Type': 'application/json', ...opts.headers },
+        ...opts
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Request failed');
+    return data;
+}
+
+function fillForm(prefix, data) {
+    for (const [key, val] of Object.entries(data)) {
+        const el = document.getElementById(prefix + '-' + key);
+        if (el) el.value = val || '';
+    }
+}
+
+function collectForm(prefix, fields) {
+    const data = {};
+    for (const f of fields) {
+        const el = document.getElementById(prefix + '-' + f);
+        data[f] = el ? el.value : '';
+    }
+    return data;
+}
+
+// ─── AUTH ────────────────────────────────────────────────────────
+async function checkAuth() {
+    try {
+        const r = await api('/api/auth-check');
+        if (r.authenticated) showApp();
+    } catch(e) {}
+}
+
+async function doLogin() {
+    try {
+        await api('/api/login', { method:'POST', body: JSON.stringify({ password: document.getElementById('loginPassword').value }) });
+        showApp();
+    } catch(e) {
+        const err = document.getElementById('loginError');
+        err.style.display = 'block';
+        err.textContent = e.message;
+    }
+}
+
+async function doLogout() {
+    await api('/api/logout', { method:'POST' });
+    document.getElementById('appContainer').style.display = 'none';
+    document.getElementById('loginScreen').style.display = 'flex';
+}
+
+function showApp() {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('appContainer').style.display = 'flex';
+    loadAll();
+}
+
+// ─── NAV ─────────────────────────────────────────────────────────
+document.querySelectorAll('.sidebar-nav a').forEach(a => {
+    a.addEventListener('click', e => {
+        e.preventDefault();
+        document.querySelectorAll('.sidebar-nav a').forEach(x => x.classList.remove('active'));
+        a.classList.add('active');
+        document.querySelectorAll('.section-panel').forEach(p => p.classList.remove('active'));
+        document.getElementById('panel-' + a.dataset.section).classList.add('active');
+    });
+});
+
+// ─── LOAD ALL DATA ───────────────────────────────────────────────
+async function loadAll() {
+    loadHero(); loadAbout(); loadServices(); loadWhy();
+    loadProcess(); loadPortfolio(); loadTestimonials();
+    loadCta(); loadSocials();
+}
+
+// ─── HERO ────────────────────────────────────────────────────────
+async function loadHero() {
+    const d = await api('/api/hero');
+    fillForm('hero', d);
+}
+async function saveHero() {
+    const fields = ['badge','title_1','title_2','title_3','subtitle','btn_primary','btn_secondary',
+        'stat_1_num','stat_1_label','stat_2_num','stat_2_label','stat_3_num','stat_3_label','stat_4_num','stat_4_label'];
+    await api('/api/hero', { method:'PUT', body: JSON.stringify(collectForm('hero', fields)) });
+    toast('Hero berhasil disimpan!');
+}
+
+// ─── ABOUT ───────────────────────────────────────────────────────
+async function loadAbout() {
+    const d = await api('/api/about');
+    fillForm('about', d);
+}
+async function saveAbout() {
+    const fields = ['eyebrow','title_1','title_2','description','philosophy_label','philosophy_title','philosophy_desc',
+        'badge_top_title','badge_top_desc','badge_bot_title','badge_bot_desc',
+        'feat_1_title','feat_1_desc','feat_2_title','feat_2_desc','feat_3_title','feat_3_desc'];
+    await api('/api/about', { method:'PUT', body: JSON.stringify(collectForm('about', fields)) });
+    toast('Tentang berhasil disimpan!');
+}
+
+// ─── SERVICES ────────────────────────────────────────────────────
+let servicesData = [];
+async function loadServices() {
+    servicesData = await api('/api/services');
+    renderServices();
+}
+function renderServices() {
+    document.getElementById('servicesList').innerHTML = servicesData.map(s => `
+        <div class="item-card">
+            <div class="item-info">
+                <h4><i class="${s.icon}" style="color:var(--gold);margin-right:8px;"></i>${s.title}</h4>
+                <p>${s.description}</p>
+            </div>
+            <div class="item-actions">
+                <button class="btn btn-ghost btn-sm" onclick="editService(${s.id})"><i class="fas fa-edit"></i></button>
+                <button class="btn btn-danger btn-sm" onclick="deleteService(${s.id})"><i class="fas fa-trash"></i></button>
+            </div>
+        </div>`).join('');
+}
+function openServiceModal(svc = null) {
+    document.getElementById('modalContent').innerHTML = `
+        <div class="modal-title">${svc ? 'Edit' : 'Tambah'} Layanan</div>
+        <div class="form-group"><label>Icon (Font Awesome class)</label><input type="text" id="m-svc-icon" value="${svc ? svc.icon : 'fas fa-star'}"></div>
+        <div class="form-group"><label>Judul</label><input type="text" id="m-svc-title" value="${svc ? svc.title : ''}"></div>
+        <div class="form-group"><label>Deskripsi</label><textarea id="m-svc-desc">${svc ? svc.description : ''}</textarea></div>
+        <div class="form-row">
+            <div class="form-group"><label>Tag</label><input type="text" id="m-svc-tag" value="${svc ? svc.tag : ''}"></div>
+            <div class="form-group"><label>Urutan</label><input type="number" id="m-svc-order" value="${svc ? svc.sort_order : servicesData.length + 1}"></div>
+        </div>
+        <div class="btn-row">
+            <button class="btn btn-gold" onclick="saveService(${svc ? svc.id : 'null'})"><i class="fas fa-save"></i> Simpan</button>
+            <button class="btn btn-ghost" onclick="closeModal()">Batal</button>
+        </div>`;
+    openModal();
+}
+function editService(id) { openServiceModal(servicesData.find(s => s.id === id)); }
+async function saveService(id) {
+    const data = { icon: gv('m-svc-icon'), title: gv('m-svc-title'), description: gv('m-svc-desc'), tag: gv('m-svc-tag'), sort_order: parseInt(gv('m-svc-order')) || 0 };
+    if (id) await api('/api/services/' + id, { method:'PUT', body: JSON.stringify(data) });
+    else await api('/api/services', { method:'POST', body: JSON.stringify(data) });
+    closeModal(); loadServices(); toast('Layanan berhasil disimpan!');
+}
+async function deleteService(id) { if(confirm('Hapus layanan ini?')) { await api('/api/services/'+id, {method:'DELETE'}); loadServices(); toast('Layanan dihapus','error'); }}
+
+// ─── WHY ITEMS ───────────────────────────────────────────────────
+let whyData = [];
+async function loadWhy() {
+    whyData = await api('/api/why-items');
+    renderWhy();
+}
+function renderWhy() {
+    document.getElementById('whyList').innerHTML = whyData.map(w => `
+        <div class="item-card">
+            <div class="item-info"><h4>${w.title}</h4><p>${w.description}</p></div>
+            <div class="item-actions">
+                <button class="btn btn-ghost btn-sm" onclick="editWhy(${w.id})"><i class="fas fa-edit"></i></button>
+                <button class="btn btn-danger btn-sm" onclick="deleteWhy(${w.id})"><i class="fas fa-trash"></i></button>
+            </div>
+        </div>`).join('');
+}
+function openWhyModal(item = null) {
+    document.getElementById('modalContent').innerHTML = `
+        <div class="modal-title">${item ? 'Edit' : 'Tambah'} Item</div>
+        <div class="form-group"><label>Judul</label><input type="text" id="m-why-title" value="${item ? item.title : ''}"></div>
+        <div class="form-group"><label>Deskripsi</label><textarea id="m-why-desc">${item ? item.description : ''}</textarea></div>
+        <div class="form-group"><label>Urutan</label><input type="number" id="m-why-order" value="${item ? item.sort_order : whyData.length + 1}"></div>
+        <div class="btn-row">
+            <button class="btn btn-gold" onclick="saveWhy(${item ? item.id : 'null'})"><i class="fas fa-save"></i> Simpan</button>
+            <button class="btn btn-ghost" onclick="closeModal()">Batal</button>
+        </div>`;
+    openModal();
+}
+function editWhy(id) { openWhyModal(whyData.find(w => w.id === id)); }
+async function saveWhy(id) {
+    const data = { title: gv('m-why-title'), description: gv('m-why-desc'), sort_order: parseInt(gv('m-why-order')) || 0 };
+    if (id) await api('/api/why-items/' + id, { method:'PUT', body: JSON.stringify(data) });
+    else await api('/api/why-items', { method:'POST', body: JSON.stringify(data) });
+    closeModal(); loadWhy(); toast('Item berhasil disimpan!');
+}
+async function deleteWhy(id) { if(confirm('Hapus item ini?')) { await api('/api/why-items/'+id, {method:'DELETE'}); loadWhy(); toast('Item dihapus','error'); }}
+
+// ─── PROCESS ─────────────────────────────────────────────────────
+let processData = [];
+async function loadProcess() {
+    processData = await api('/api/process-steps');
+    renderProcess();
+}
+function renderProcess() {
+    document.getElementById('processList').innerHTML = processData.map(p => `
+        <div class="item-card">
+            <div class="item-info"><h4>Step ${p.sort_order}: ${p.title}</h4><p>${p.description}</p></div>
+            <div class="item-actions">
+                <button class="btn btn-ghost btn-sm" onclick="editProcess(${p.id})"><i class="fas fa-edit"></i></button>
+                <button class="btn btn-danger btn-sm" onclick="deleteProcess(${p.id})"><i class="fas fa-trash"></i></button>
+            </div>
+        </div>`).join('');
+}
+function openProcessModal(item = null) {
+    document.getElementById('modalContent').innerHTML = `
+        <div class="modal-title">${item ? 'Edit' : 'Tambah'} Step</div>
+        <div class="form-group"><label>Judul</label><input type="text" id="m-proc-title" value="${item ? item.title : ''}"></div>
+        <div class="form-group"><label>Deskripsi</label><textarea id="m-proc-desc">${item ? item.description : ''}</textarea></div>
+        <div class="form-group"><label>Urutan</label><input type="number" id="m-proc-order" value="${item ? item.sort_order : processData.length + 1}"></div>
+        <div class="btn-row">
+            <button class="btn btn-gold" onclick="saveProcess(${item ? item.id : 'null'})"><i class="fas fa-save"></i> Simpan</button>
+            <button class="btn btn-ghost" onclick="closeModal()">Batal</button>
+        </div>`;
+    openModal();
+}
+function editProcess(id) { openProcessModal(processData.find(p => p.id === id)); }
+async function saveProcess(id) {
+    const data = { title: gv('m-proc-title'), description: gv('m-proc-desc'), sort_order: parseInt(gv('m-proc-order')) || 0 };
+    if (id) await api('/api/process-steps/' + id, { method:'PUT', body: JSON.stringify(data) });
+    else await api('/api/process-steps', { method:'POST', body: JSON.stringify(data) });
+    closeModal(); loadProcess(); toast('Step berhasil disimpan!');
+}
+async function deleteProcess(id) { if(confirm('Hapus step ini?')) { await api('/api/process-steps/'+id, {method:'DELETE'}); loadProcess(); toast('Step dihapus','error'); }}
+
+// ─── PORTFOLIO ───────────────────────────────────────────────────
+let portfolioData = [];
+async function loadPortfolio() {
+    portfolioData = await api('/api/portfolio');
+    renderPortfolio();
+}
+function renderPortfolio() {
+    document.getElementById('portfolioList').innerHTML = portfolioData.map(p => `
+        <div class="port-admin-card">
+            <div class="port-admin-header">
+                <h4>${p.client_name} &mdash; ${p.project_title}</h4>
+                <div style="display:flex;gap:6px;">
+                    <button class="btn btn-ghost btn-sm" onclick="editPortfolio(${p.id})"><i class="fas fa-edit"></i> Edit</button>
+                    <button class="btn btn-danger btn-sm" onclick="deletePortfolio(${p.id})"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>
+            <div class="port-admin-body" style="display:flex;gap:16px;align-items:flex-start;">
+                <div class="port-admin-thumb">${p.screenshot ? '<img src="'+p.screenshot+'" alt="">' : '<i class="fas fa-image"></i>'}</div>
+                <div>
+                    <p style="font-size:13px;color:var(--text-dim);line-height:1.6;">${p.description}</p>
+                    <div class="port-admin-meta">
+                        <strong>URL:</strong> <a href="${p.live_url}" target="_blank" style="color:var(--gold);">${p.live_url}</a>
+                        &nbsp;&bull;&nbsp; <strong>Tags:</strong> ${p.tags}
+                    </div>
+                </div>
+            </div>
+        </div>`).join('');
+}
+
+function openPortfolioModal(item = null) {
+    const screenshotPreview = item && item.screenshot ? `<div class="file-preview"><img src="${item.screenshot}" alt=""></div>` : '';
+    document.getElementById('modalContent').innerHTML = `
+        <div class="modal-title">${item ? 'Edit' : 'Tambah'} Portfolio</div>
+        <div class="form-group"><label>Nama Klien</label><input type="text" id="m-port-client" value="${item ? item.client_name : ''}"></div>
+        <div class="form-group"><label>Judul Proyek</label><input type="text" id="m-port-title" value="${item ? item.project_title : ''}"></div>
+        <div class="form-group"><label>Deskripsi</label><textarea id="m-port-desc">${item ? item.description : ''}</textarea></div>
+        <div class="form-row">
+            <div class="form-group"><label>Tags (pisah koma)</label><input type="text" id="m-port-tags" value="${item ? item.tags : ''}" placeholder="Web Design,SEO,Landing Page"></div>
+            <div class="form-group"><label>URL di Browser Bar</label><input type="text" id="m-port-browser" value="${item ? item.browser_url : ''}" placeholder="contoh.com"></div>
+        </div>
+        <div class="form-group"><label>Link Website Live</label><input type="text" id="m-port-url" value="${item ? item.live_url : ''}" placeholder="https://contoh.com"></div>
+        <div class="form-row">
+            <div class="form-group"><label>Warna Glow</label><input type="text" id="m-port-glow" value="${item ? item.glow_color : 'rgba(212,175,55,.15)'}"></div>
+            <div class="form-group"><label>Urutan</label><input type="number" id="m-port-order" value="${item ? item.sort_order : portfolioData.length + 1}"></div>
+        </div>
+        <div class="form-group">
+            <label>Screenshot (opsional)</label>
+            <div class="file-drop" onclick="document.getElementById('m-port-file').click()">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <p>Klik untuk upload gambar (max 5MB)</p>
+                <input type="file" id="m-port-file" accept="image/*" onchange="previewFile(this)">
+            </div>
+            <div id="m-port-preview">${screenshotPreview}</div>
+        </div>
+        <input type="hidden" id="m-port-id" value="${item ? item.id : ''}">
+        <input type="hidden" id="m-port-existing-screenshot" value="${item ? item.screenshot : ''}">
+        <div class="btn-row">
+            <button class="btn btn-gold" onclick="savePortfolio()"><i class="fas fa-save"></i> Simpan Portfolio</button>
+            <button class="btn btn-ghost" onclick="closeModal()">Batal</button>
+        </div>`;
+    openModal();
+}
+function editPortfolio(id) { openPortfolioModal(portfolioData.find(p => p.id === id)); }
+
+function previewFile(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            document.getElementById('m-port-preview').innerHTML = `<div class="file-preview"><img src="${e.target.result}" alt=""></div>`;
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+async function savePortfolio() {
+    try {
+        const id = gv('m-port-id');
+        const formData = new FormData();
+        formData.append('client_name', gv('m-port-client'));
+        formData.append('project_title', gv('m-port-title'));
+        formData.append('description', gv('m-port-desc'));
+        formData.append('tags', gv('m-port-tags'));
+        formData.append('live_url', gv('m-port-url'));
+        formData.append('browser_url', gv('m-port-browser'));
+        formData.append('glow_color', gv('m-port-glow'));
+        formData.append('sort_order', gv('m-port-order'));
+        formData.append('existing_screenshot', gv('m-port-existing-screenshot'));
+
+        const fileInput = document.getElementById('m-port-file');
+        if (fileInput && fileInput.files.length > 0) formData.append('screenshot', fileInput.files[0]);
+
+        const url = id ? '/api/portfolio/' + id : '/api/portfolio';
+        const method = id ? 'PUT' : 'POST';
+
+        const res = await fetch(url, { method, body: formData, credentials: 'same-origin' });
+        if (!res.ok) {
+            let msg = 'Gagal menyimpan!';
+            try { const data = await res.json(); if (data.error) msg = data.error; } catch(_) {}
+            console.error('Save portfolio failed:', res.status, msg);
+            toast(msg, 'error');
+            return;
+        }
+
+        closeModal(); loadPortfolio(); toast('Portfolio berhasil disimpan!');
+    } catch (err) {
+        console.error('savePortfolio exception:', err);
+        toast('Error: ' + err.message, 'error');
+    }
+}
+
+async function deletePortfolio(id) {
+    if (confirm('Hapus portfolio ini?')) {
+        await api('/api/portfolio/' + id, { method: 'DELETE' });
+        loadPortfolio();
+        toast('Portfolio dihapus', 'error');
+    }
+}
+
+// ─── TESTIMONIALS ────────────────────────────────────────────────
+let testiData = [];
+async function loadTestimonials() {
+    testiData = await api('/api/testimonials');
+    renderTestimonials();
+}
+function renderTestimonials() {
+    document.getElementById('testimonialsList').innerHTML = testiData.map(t => `
+        <div class="item-card">
+            <div class="item-info">
+                <h4>${t.name} <span style="color:var(--muted);font-weight:400;font-size:12px;">&mdash; ${t.role}</span></h4>
+                <p style="font-style:italic;">"${t.quote}"</p>
+            </div>
+            <div class="item-actions">
+                <button class="btn btn-ghost btn-sm" onclick="editTestimonial(${t.id})"><i class="fas fa-edit"></i></button>
+                <button class="btn btn-danger btn-sm" onclick="deleteTestimonial(${t.id})"><i class="fas fa-trash"></i></button>
+            </div>
+        </div>`).join('');
+}
+function openTestimonialModal(item = null) {
+    document.getElementById('modalContent').innerHTML = `
+        <div class="modal-title">${item ? 'Edit' : 'Tambah'} Testimoni</div>
+        <div class="form-group"><label>Kutipan</label><textarea id="m-testi-quote" rows="4">${item ? item.quote : ''}</textarea></div>
+        <div class="form-row">
+            <div class="form-group"><label>Nama</label><input type="text" id="m-testi-name" value="${item ? item.name : ''}"></div>
+            <div class="form-group"><label>Jabatan/Role</label><input type="text" id="m-testi-role" value="${item ? item.role : ''}"></div>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label>Huruf Avatar</label><input type="text" id="m-testi-avatar" value="${item ? item.avatar_letter : ''}" maxlength="1"></div>
+            <div class="form-group"><label>Urutan</label><input type="number" id="m-testi-order" value="${item ? item.sort_order : testiData.length + 1}"></div>
+        </div>
+        <div class="btn-row">
+            <button class="btn btn-gold" onclick="saveTestimonial(${item ? item.id : 'null'})"><i class="fas fa-save"></i> Simpan</button>
+            <button class="btn btn-ghost" onclick="closeModal()">Batal</button>
+        </div>`;
+    openModal();
+}
+function editTestimonial(id) { openTestimonialModal(testiData.find(t => t.id === id)); }
+async function saveTestimonial(id) {
+    const data = { quote: gv('m-testi-quote'), name: gv('m-testi-name'), role: gv('m-testi-role'), avatar_letter: gv('m-testi-avatar'), sort_order: parseInt(gv('m-testi-order')) || 0 };
+    if (id) await api('/api/testimonials/' + id, { method:'PUT', body: JSON.stringify(data) });
+    else await api('/api/testimonials', { method:'POST', body: JSON.stringify(data) });
+    closeModal(); loadTestimonials(); toast('Testimoni berhasil disimpan!');
+}
+async function deleteTestimonial(id) { if(confirm('Hapus testimoni ini?')) { await api('/api/testimonials/'+id, {method:'DELETE'}); loadTestimonials(); toast('Testimoni dihapus','error'); }}
+
+// ─── CTA ─────────────────────────────────────────────────────────
+async function loadCta() {
+    const d = await api('/api/cta');
+    fillForm('cta', d);
+}
+async function saveCta() {
+    const fields = ['eyebrow','title_1','title_2','subtitle'];
+    await api('/api/cta', { method:'PUT', body: JSON.stringify(collectForm('cta', fields)) });
+    toast('CTA berhasil disimpan!');
+}
+
+// ─── SOCIALS ─────────────────────────────────────────────────────
+async function loadSocials() {
+    const d = await api('/api/socials');
+    fillForm('socials', d);
+}
+async function saveSocials() {
+    const fields = ['whatsapp','instagram','tiktok','phone_display'];
+    await api('/api/socials', { method:'PUT', body: JSON.stringify(collectForm('socials', fields)) });
+    toast('Sosial media berhasil disimpan!');
+}
+
+// ─── PASSWORD ────────────────────────────────────────────────────
+async function changePassword() {
+    const cur = gv('settings-current'), np = gv('settings-new'), conf = gv('settings-confirm');
+    if (np !== conf) { toast('Password baru tidak cocok!', 'error'); return; }
+    if (np.length < 4) { toast('Password minimal 4 karakter!', 'error'); return; }
+    try {
+        await api('/api/change-password', { method:'POST', body: JSON.stringify({ current: cur, newPassword: np }) });
+        toast('Password berhasil diganti!');
+        document.getElementById('settings-current').value = '';
+        document.getElementById('settings-new').value = '';
+        document.getElementById('settings-confirm').value = '';
+    } catch(e) { toast(e.message, 'error'); }
+}
+
+// ─── MODAL ───────────────────────────────────────────────────────
+function openModal() { document.getElementById('modalOverlay').classList.add('open'); }
+function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
+
+// ─── HELPER ──────────────────────────────────────────────────────
+function gv(id) { return document.getElementById(id).value; }
+
+// ─── INIT ────────────────────────────────────────────────────────
+checkAuth();
+</script>
+</body>
+</html>
