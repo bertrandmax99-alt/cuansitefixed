@@ -2363,31 +2363,13 @@
     /* ─── DYNAMIC CONTENT LOADING FROM API ────────────────────────────── */
     (async function loadDynamicContent() {
         try {
-            const res = await window.fetch('/api/content');
+            const res = await fetch('/api/content');
             if (!res.ok) return; // static fallback if no server
             const d = await res.json();
             const esc = s => s || '';
             const waLink = n => 'https://wa.me/' + (n || '6285136910032');
             const igLink = u => 'https://www.instagram.com/' + (u || 'cuansite.id');
             const ttLink = u => 'https://www.tiktok.com/@' + (u || 'cuansite.id');
-
-            // ── General ──
-            if (d.general) {
-                const g = d.general;
-                if (g.logo_text || g.logo_span) {
-                    const logos = document.querySelectorAll('.logo');
-                    logos.forEach(l => l.innerHTML = `${esc(g.logo_text || 'Cuan')}<span>${esc(g.logo_span || 'Site')}</span>`);
-                }
-                if (g.meta_title) document.title = esc(g.meta_title);
-                if (g.meta_desc) {
-                    const metaDesc = document.querySelector('meta[name="description"]');
-                    if (metaDesc) metaDesc.setAttribute('content', esc(g.meta_desc));
-                }
-                if (g.footer_desc) {
-                    const footerDesc = document.querySelector('.footer-brand p');
-                    if (footerDesc) footerDesc.textContent = esc(g.footer_desc);
-                }
-            }
 
             // ── Socials (used everywhere) ──
             const wa = d.socials ? d.socials.whatsapp : '6285136910032';

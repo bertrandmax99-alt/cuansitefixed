@@ -1,4 +1,7 @@
 node_modules/
-uploads/
-cuansite.db
-.env
+.next/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example

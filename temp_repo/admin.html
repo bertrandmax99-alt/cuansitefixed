@@ -320,7 +320,6 @@
         <div class="sidebar-label">Admin Dashboard</div>
         <nav class="sidebar-nav">
             <a href="#" data-section="hero" class="active"><i class="fas fa-home"></i> Hero</a>
-            <a href="#" data-section="general"><i class="fas fa-globe"></i> Umum</a>
             <a href="#" data-section="about"><i class="fas fa-info-circle"></i> Tentang</a>
             <a href="#" data-section="services"><i class="fas fa-concierge-bell"></i> Layanan</a>
             <a href="#" data-section="why"><i class="fas fa-star"></i> Kenapa Kami</a>
@@ -381,23 +380,6 @@
                 </div>
             </div>
             <div class="btn-row"><button class="btn btn-gold" onclick="saveHero()"><i class="fas fa-save"></i> Simpan Hero</button></div>
-        </div>
-
-        <!-- GENERAL -->
-        <div class="section-panel" id="panel-general">
-            <div class="page-title">Pengaturan Umum</div>
-            <div class="page-sub">Kelola logo, SEO, dan Footer</div>
-            <div class="card">
-                <div class="card-title"><i class="fas fa-globe"></i> Identitas Website</div>
-                <div class="form-row">
-                    <div class="form-group"><label>Teks Logo Utama</label><input type="text" id="general-logo_text"></div>
-                    <div class="form-group"><label>Teks Logo Aksen (Gold)</label><input type="text" id="general-logo_span"></div>
-                </div>
-                <div class="form-group"><label>Meta Title (SEO)</label><input type="text" id="general-meta_title"></div>
-                <div class="form-group"><label>Meta Description (SEO)</label><textarea id="general-meta_desc"></textarea></div>
-                <div class="form-group"><label>Deskripsi Footer</label><textarea id="general-footer_desc"></textarea></div>
-            </div>
-            <div class="btn-row"><button class="btn btn-gold" onclick="saveGeneral()"><i class="fas fa-save"></i> Simpan Umum</button></div>
         </div>
 
         <!-- ABOUT -->
@@ -549,7 +531,7 @@ function toast(msg, type='success') {
 }
 
 async function api(url, opts = {}) {
-    const res = await window.fetch(url, {
+    const res = await fetch(url, {
         headers: { 'Content-Type': 'application/json', ...opts.headers },
         ...opts
     });
@@ -618,20 +600,9 @@ document.querySelectorAll('.sidebar-nav a').forEach(a => {
 
 // ─── LOAD ALL DATA ───────────────────────────────────────────────
 async function loadAll() {
-    loadGeneral(); loadHero(); loadAbout(); loadServices(); loadWhy();
+    loadHero(); loadAbout(); loadServices(); loadWhy();
     loadProcess(); loadPortfolio(); loadTestimonials();
     loadCta(); loadSocials();
-}
-
-// ─── GENERAL ─────────────────────────────────────────────────────
-async function loadGeneral() {
-    const d = await api('/api/general');
-    fillForm('general', d);
-}
-async function saveGeneral() {
-    const fields = ['logo_text','logo_span','meta_title','meta_desc','footer_desc'];
-    await api('/api/general', { method:'PUT', body: JSON.stringify(collectForm('general', fields)) });
-    toast('Pengaturan umum berhasil disimpan!');
 }
 
 // ─── HERO ────────────────────────────────────────────────────────
@@ -871,7 +842,7 @@ async function savePortfolio() {
         const url = id ? '/api/portfolio/' + id : '/api/portfolio';
         const method = id ? 'PUT' : 'POST';
 
-        const res = await window.fetch(url, { method, body: formData, credentials: 'same-origin' });
+        const res = await fetch(url, { method, body: formData, credentials: 'same-origin' });
         if (!res.ok) {
             let msg = 'Gagal menyimpan!';
             try { const data = await res.json(); if (data.error) msg = data.error; } catch(_) {}
