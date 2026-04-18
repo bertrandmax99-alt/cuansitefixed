@@ -1,5 +1,5 @@
 const express = require('express');
-const session = require('express-session');
+const cookieSession = require('cookie-session');
 const multer = require('multer');
 const pathMod = require('path');
 const fs = require('fs');
@@ -7,6 +7,7 @@ const { db, doc, getDoc, setDoc, collection, getDocs, addDoc, updateDoc, deleteD
 
 const app = express();
 const PORT = 3000;
+
 
 // ─── HELPER: wrap db calls ───────────────────────────────────────
 async function getSingleton(col) {
@@ -157,17 +158,23 @@ async function initDb() {
 }
 
 // ─── MIDDLEWARE ───────────────────────────────────────────────────
+app.set('trust proxy', 1); // Trust first proxy for secure cookies
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
-app.use(session({
-  secret: 'cuansite-secret-2025',
-  resave: false,
-  saveUninitialized: false,
-  cookie: { maxAge: 24 * 60 * 60 * 1000 }
+app.use(cookieSession({
+  name: 'session',
+  keys: ['cuansite-secret-2025'],
+  maxAge: 24 * 60 * 60 * 1000, // 24 hours
+  sameSite: 'none',
+  secure: true
 }));
 
 const uploadsDir = pathMod.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+try {
+  if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+} catch (e) {
+  console.warn('Could not create uploads directory (likely in read-only environment like Netlify)');
+}
 app.use('/uploads', express.static(uploadsDir));
 
 const multerStorage = multer.memoryStorage();
@@ -198,7 +205,7 @@ app.post('/api/login', async (req, res) => {
 });
 
 app.post('/api/logout', (req, res) => {
-  req.session.destroy();
+  req.session = null;
   res.json({ success: true });
 });
 
@@ -440,12 +447,25 @@ app.use(express.static(__dirname, { index: 'index.html' }));
 app.get('/admin', (req, res) => res.sendFile(pathMod.join(__dirname, 'admin.html')));
 
 // ─── START ───────────────────────────────────────────────────────
-initDb().then(() => {
-  app.listen(PORT, () => {
-    console.log(`CuanSite server running at http://localhost:${PORT}`);
-    console.log(`Admin dashboard: http://localhost:${PORT}/admin`);
+let dbInitialized = false;
+async function ensureDbInit() {
+  if (!dbInitialized) {
+    await initDb();
+    dbInitialized = true;
+  }
+}
+
+if (require.main === module) {
+  ensureDbInit().then(() => {
+    app.listen(PORT, () => {
+      console.log(`CuanSite server running at http://localhost:${PORT}`);
+      console.log(`Admin dashboard: http://localhost:${PORT}/admin`);
+    });
+  }).catch(err => {
+    console.error('Failed to init database:', err);
+    process.exit(1);
   });
-}).catch(err => {
-  console.error('Failed to init database:', err);
-  process.exit(1);
-});
+}
+
+module.exports = app;
+module.exports.ensureDbInit = ensureDbInit;

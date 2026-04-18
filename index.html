@@ -1,6 +1,22 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+    <script>
+      // Safe guard against AI Studio preview iframe "Cannot set property fetch"
+      if (typeof window !== 'undefined') {
+          try {
+              let desc = Object.getOwnPropertyDescriptor(window, 'fetch');
+              if (desc && !desc.set) {
+                  let orig = window.fetch;
+                  Object.defineProperty(window, 'fetch', {
+                      get() { return orig; },
+                      set(v) { /* ignore overwrite */ },
+                      configurable: true
+                  });
+              }
+          } catch(e) {}
+      }
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CuanSite — Web Design Agency Premium Indonesia</title>
@@ -2363,7 +2379,7 @@
     /* ─── DYNAMIC CONTENT LOADING FROM API ────────────────────────────── */
     (async function loadDynamicContent() {
         try {
-            const res = await window.fetch('/api/content');
+            const res = await fetch('/api/content');
             if (!res.ok) return; // static fallback if no server
             const d = await res.json();
             const esc = s => s || '';

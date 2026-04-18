@@ -1,6 +1,22 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+    <script>
+      // Safe guard against AI Studio preview iframe "Cannot set property fetch"
+      if (typeof window !== 'undefined') {
+          try {
+              let desc = Object.getOwnPropertyDescriptor(window, 'fetch');
+              if (desc && !desc.set) {
+                  let orig = window.fetch;
+                  Object.defineProperty(window, 'fetch', {
+                      get() { return orig; },
+                      set(v) { /* ignore overwrite */ },
+                      configurable: true
+                  });
+              }
+          } catch(e) {}
+      }
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CuanSite Admin Dashboard</title>
@@ -549,8 +565,9 @@ function toast(msg, type='success') {
 }
 
 async function api(url, opts = {}) {
-    const res = await window.fetch(url, {
+    const res = await fetch(url, {
         headers: { 'Content-Type': 'application/json', ...opts.headers },
+        credentials: 'include',
         ...opts
     });
     const data = await res.json();
@@ -629,9 +646,11 @@ async function loadGeneral() {
     fillForm('general', d);
 }
 async function saveGeneral() {
-    const fields = ['logo_text','logo_span','meta_title','meta_desc','footer_desc'];
-    await api('/api/general', { method:'PUT', body: JSON.stringify(collectForm('general', fields)) });
-    toast('Pengaturan umum berhasil disimpan!');
+    try {
+        const fields = ['logo_text','logo_span','meta_title','meta_desc','footer_desc'];
+        await api('/api/general', { method:'PUT', body: JSON.stringify(collectForm('general', fields)) });
+        toast('Pengaturan umum berhasil disimpan!');
+    } catch(err) { toast(err.message, 'error'); }
 }
 
 // ─── HERO ────────────────────────────────────────────────────────
@@ -640,10 +659,12 @@ async function loadHero() {
     fillForm('hero', d);
 }
 async function saveHero() {
-    const fields = ['badge','title_1','title_2','title_3','subtitle','btn_primary','btn_secondary',
-        'stat_1_num','stat_1_label','stat_2_num','stat_2_label','stat_3_num','stat_3_label','stat_4_num','stat_4_label'];
-    await api('/api/hero', { method:'PUT', body: JSON.stringify(collectForm('hero', fields)) });
-    toast('Hero berhasil disimpan!');
+    try {
+        const fields = ['badge','title_1','title_2','title_3','subtitle','btn_primary','btn_secondary',
+            'stat_1_num','stat_1_label','stat_2_num','stat_2_label','stat_3_num','stat_3_label','stat_4_num','stat_4_label'];
+        await api('/api/hero', { method:'PUT', body: JSON.stringify(collectForm('hero', fields)) });
+        toast('Hero berhasil disimpan!');
+    } catch(err) { toast(err.message, 'error'); }
 }
 
 // ─── ABOUT ───────────────────────────────────────────────────────
@@ -652,11 +673,13 @@ async function loadAbout() {
     fillForm('about', d);
 }
 async function saveAbout() {
-    const fields = ['eyebrow','title_1','title_2','description','philosophy_label','philosophy_title','philosophy_desc',
-        'badge_top_title','badge_top_desc','badge_bot_title','badge_bot_desc',
-        'feat_1_title','feat_1_desc','feat_2_title','feat_2_desc','feat_3_title','feat_3_desc'];
-    await api('/api/about', { method:'PUT', body: JSON.stringify(collectForm('about', fields)) });
-    toast('Tentang berhasil disimpan!');
+    try {
+        const fields = ['eyebrow','title_1','title_2','description','philosophy_label','philosophy_title','philosophy_desc',
+            'badge_top_title','badge_top_desc','badge_bot_title','badge_bot_desc',
+            'feat_1_title','feat_1_desc','feat_2_title','feat_2_desc','feat_3_title','feat_3_desc'];
+        await api('/api/about', { method:'PUT', body: JSON.stringify(collectForm('about', fields)) });
+        toast('Tentang berhasil disimpan!');
+    } catch(err) { toast(err.message, 'error'); }
 }
 
 // ─── SERVICES ────────────────────────────────────────────────────
@@ -673,8 +696,8 @@ function renderServices() {
                 <p>${s.description}</p>
             </div>
             <div class="item-actions">
-                <button class="btn btn-ghost btn-sm" onclick="editService(${s.id})"><i class="fas fa-edit"></i></button>
-                <button class="btn btn-danger btn-sm" onclick="deleteService(${s.id})"><i class="fas fa-trash"></i></button>
+                <button class="btn btn-ghost btn-sm" onclick="editService('${s.id}')"><i class="fas fa-edit"></i></button>
+                <button class="btn btn-danger btn-sm" onclick="deleteService('${s.id}')"><i class="fas fa-trash"></i></button>
             </div>
         </div>`).join('');
 }
@@ -689,19 +712,21 @@ function openServiceModal(svc = null) {
             <div class="form-group"><label>Urutan</label><input type="number" id="m-svc-order" value="${svc ? svc.sort_order : servicesData.length + 1}"></div>
         </div>
         <div class="btn-row">
-            <button class="btn btn-gold" onclick="saveService(${svc ? svc.id : 'null'})"><i class="fas fa-save"></i> Simpan</button>
+            <button class="btn btn-gold" onclick="saveService('${svc ? svc.id : ''}')"><i class="fas fa-save"></i> Simpan</button>
             <button class="btn btn-ghost" onclick="closeModal()">Batal</button>
         </div>`;
     openModal();
 }
 function editService(id) { openServiceModal(servicesData.find(s => s.id === id)); }
 async function saveService(id) {
-    const data = { icon: gv('m-svc-icon'), title: gv('m-svc-title'), description: gv('m-svc-desc'), tag: gv('m-svc-tag'), sort_order: parseInt(gv('m-svc-order')) || 0 };
-    if (id) await api('/api/services/' + id, { method:'PUT', body: JSON.stringify(data) });
-    else await api('/api/services', { method:'POST', body: JSON.stringify(data) });
-    closeModal(); loadServices(); toast('Layanan berhasil disimpan!');
+    try {
+        const data = { icon: gv('m-svc-icon'), title: gv('m-svc-title'), description: gv('m-svc-desc'), tag: gv('m-svc-tag'), sort_order: parseInt(gv('m-svc-order')) || 0 };
+        if (id) await api('/api/services/' + id, { method:'PUT', body: JSON.stringify(data) });
+        else await api('/api/services', { method:'POST', body: JSON.stringify(data) });
+        closeModal(); loadServices(); toast('Layanan berhasil disimpan!');
+    } catch(err) { toast(err.message, 'error'); }
 }
-async function deleteService(id) { if(confirm('Hapus layanan ini?')) { await api('/api/services/'+id, {method:'DELETE'}); loadServices(); toast('Layanan dihapus','error'); }}
+async function deleteService(id) { try { if(confirm('Hapus layanan ini?')) { await api('/api/services/'+id, {method:'DELETE'}); loadServices(); toast('Layanan dihapus','error'); } } catch(err) { toast(err.message, 'error'); } }
 
 // ─── WHY ITEMS ───────────────────────────────────────────────────
 let whyData = [];
@@ -714,8 +739,8 @@ function renderWhy() {
         <div class="item-card">
             <div class="item-info"><h4>${w.title}</h4><p>${w.description}</p></div>
             <div class="item-actions">
-                <button class="btn btn-ghost btn-sm" onclick="editWhy(${w.id})"><i class="fas fa-edit"></i></button>
-                <button class="btn btn-danger btn-sm" onclick="deleteWhy(${w.id})"><i class="fas fa-trash"></i></button>
+                <button class="btn btn-ghost btn-sm" onclick="editWhy('${w.id}')"><i class="fas fa-edit"></i></button>
+                <button class="btn btn-danger btn-sm" onclick="deleteWhy('${w.id}')"><i class="fas fa-trash"></i></button>
             </div>
         </div>`).join('');
 }
@@ -726,19 +751,21 @@ function openWhyModal(item = null) {
         <div class="form-group"><label>Deskripsi</label><textarea id="m-why-desc">${item ? item.description : ''}</textarea></div>
         <div class="form-group"><label>Urutan</label><input type="number" id="m-why-order" value="${item ? item.sort_order : whyData.length + 1}"></div>
         <div class="btn-row">
-            <button class="btn btn-gold" onclick="saveWhy(${item ? item.id : 'null'})"><i class="fas fa-save"></i> Simpan</button>
+            <button class="btn btn-gold" onclick="saveWhy('${item ? item.id : ''}')"><i class="fas fa-save"></i> Simpan</button>
             <button class="btn btn-ghost" onclick="closeModal()">Batal</button>
         </div>`;
     openModal();
 }
 function editWhy(id) { openWhyModal(whyData.find(w => w.id === id)); }
 async function saveWhy(id) {
-    const data = { title: gv('m-why-title'), description: gv('m-why-desc'), sort_order: parseInt(gv('m-why-order')) || 0 };
-    if (id) await api('/api/why-items/' + id, { method:'PUT', body: JSON.stringify(data) });
-    else await api('/api/why-items', { method:'POST', body: JSON.stringify(data) });
-    closeModal(); loadWhy(); toast('Item berhasil disimpan!');
+    try {
+        const data = { title: gv('m-why-title'), description: gv('m-why-desc'), sort_order: parseInt(gv('m-why-order')) || 0 };
+        if (id) await api('/api/why-items/' + id, { method:'PUT', body: JSON.stringify(data) });
+        else await api('/api/why-items', { method:'POST', body: JSON.stringify(data) });
+        closeModal(); loadWhy(); toast('Item berhasil disimpan!');
+    } catch(err) { toast(err.message, 'error'); }
 }
-async function deleteWhy(id) { if(confirm('Hapus item ini?')) { await api('/api/why-items/'+id, {method:'DELETE'}); loadWhy(); toast('Item dihapus','error'); }}
+async function deleteWhy(id) { try { if(confirm('Hapus item ini?')) { await api('/api/why-items/'+id, {method:'DELETE'}); loadWhy(); toast('Item dihapus','error'); } } catch(err) { toast(err.message, 'error'); } }
 
 // ─── PROCESS ─────────────────────────────────────────────────────
 let processData = [];
@@ -751,8 +778,8 @@ function renderProcess() {
         <div class="item-card">
             <div class="item-info"><h4>Step ${p.sort_order}: ${p.title}</h4><p>${p.description}</p></div>
             <div class="item-actions">
-                <button class="btn btn-ghost btn-sm" onclick="editProcess(${p.id})"><i class="fas fa-edit"></i></button>
-                <button class="btn btn-danger btn-sm" onclick="deleteProcess(${p.id})"><i class="fas fa-trash"></i></button>
+                <button class="btn btn-ghost btn-sm" onclick="editProcess('${p.id}')"><i class="fas fa-edit"></i></button>
+                <button class="btn btn-danger btn-sm" onclick="deleteProcess('${p.id}')"><i class="fas fa-trash"></i></button>
             </div>
         </div>`).join('');
 }
@@ -763,19 +790,21 @@ function openProcessModal(item = null) {
         <div class="form-group"><label>Deskripsi</label><textarea id="m-proc-desc">${item ? item.description : ''}</textarea></div>
         <div class="form-group"><label>Urutan</label><input type="number" id="m-proc-order" value="${item ? item.sort_order : processData.length + 1}"></div>
         <div class="btn-row">
-            <button class="btn btn-gold" onclick="saveProcess(${item ? item.id : 'null'})"><i class="fas fa-save"></i> Simpan</button>
+            <button class="btn btn-gold" onclick="saveProcess('${item ? item.id : ''}')"><i class="fas fa-save"></i> Simpan</button>
             <button class="btn btn-ghost" onclick="closeModal()">Batal</button>
         </div>`;
     openModal();
 }
 function editProcess(id) { openProcessModal(processData.find(p => p.id === id)); }
 async function saveProcess(id) {
-    const data = { title: gv('m-proc-title'), description: gv('m-proc-desc'), sort_order: parseInt(gv('m-proc-order')) || 0 };
-    if (id) await api('/api/process-steps/' + id, { method:'PUT', body: JSON.stringify(data) });
-    else await api('/api/process-steps', { method:'POST', body: JSON.stringify(data) });
-    closeModal(); loadProcess(); toast('Step berhasil disimpan!');
+    try {
+        const data = { title: gv('m-proc-title'), description: gv('m-proc-desc'), sort_order: parseInt(gv('m-proc-order')) || 0 };
+        if (id) await api('/api/process-steps/' + id, { method:'PUT', body: JSON.stringify(data) });
+        else await api('/api/process-steps', { method:'POST', body: JSON.stringify(data) });
+        closeModal(); loadProcess(); toast('Step berhasil disimpan!');
+    } catch(err) { toast(err.message, 'error'); }
 }
-async function deleteProcess(id) { if(confirm('Hapus step ini?')) { await api('/api/process-steps/'+id, {method:'DELETE'}); loadProcess(); toast('Step dihapus','error'); }}
+async function deleteProcess(id) { try { if(confirm('Hapus step ini?')) { await api('/api/process-steps/'+id, {method:'DELETE'}); loadProcess(); toast('Step dihapus','error'); } } catch(err) { toast(err.message, 'error'); } }
 
 // ─── PORTFOLIO ───────────────────────────────────────────────────
 let portfolioData = [];
@@ -789,8 +818,8 @@ function renderPortfolio() {
             <div class="port-admin-header">
                 <h4>${p.client_name} &mdash; ${p.project_title}</h4>
                 <div style="display:flex;gap:6px;">
-                    <button class="btn btn-ghost btn-sm" onclick="editPortfolio(${p.id})"><i class="fas fa-edit"></i> Edit</button>
-                    <button class="btn btn-danger btn-sm" onclick="deletePortfolio(${p.id})"><i class="fas fa-trash"></i></button>
+                    <button class="btn btn-ghost btn-sm" onclick="editPortfolio('${p.id}')"><i class="fas fa-edit"></i> Edit</button>
+                    <button class="btn btn-danger btn-sm" onclick="deletePortfolio('${p.id}')"><i class="fas fa-trash"></i></button>
                 </div>
             </div>
             <div class="port-admin-body" style="display:flex;gap:16px;align-items:flex-start;">
@@ -871,7 +900,7 @@ async function savePortfolio() {
         const url = id ? '/api/portfolio/' + id : '/api/portfolio';
         const method = id ? 'PUT' : 'POST';
 
-        const res = await window.fetch(url, { method, body: formData, credentials: 'same-origin' });
+        const res = await fetch(url, { method, body: formData, credentials: 'include' });
         if (!res.ok) {
             let msg = 'Gagal menyimpan!';
             try { const data = await res.json(); if (data.error) msg = data.error; } catch(_) {}
@@ -888,11 +917,13 @@ async function savePortfolio() {
 }
 
 async function deletePortfolio(id) {
-    if (confirm('Hapus portfolio ini?')) {
-        await api('/api/portfolio/' + id, { method: 'DELETE' });
-        loadPortfolio();
-        toast('Portfolio dihapus', 'error');
-    }
+    try {
+        if (confirm('Hapus portfolio ini?')) {
+            await api('/api/portfolio/' + id, { method: 'DELETE' });
+            loadPortfolio();
+            toast('Portfolio dihapus', 'error');
+        }
+    } catch(err) { toast(err.message, 'error'); }
 }
 
 // ─── TESTIMONIALS ────────────────────────────────────────────────
@@ -909,8 +940,8 @@ function renderTestimonials() {
                 <p style="font-style:italic;">"${t.quote}"</p>
             </div>
             <div class="item-actions">
-                <button class="btn btn-ghost btn-sm" onclick="editTestimonial(${t.id})"><i class="fas fa-edit"></i></button>
-                <button class="btn btn-danger btn-sm" onclick="deleteTestimonial(${t.id})"><i class="fas fa-trash"></i></button>
+                <button class="btn btn-ghost btn-sm" onclick="editTestimonial('${t.id}')"><i class="fas fa-edit"></i></button>
+                <button class="btn btn-danger btn-sm" onclick="deleteTestimonial('${t.id}')"><i class="fas fa-trash"></i></button>
             </div>
         </div>`).join('');
 }
@@ -927,19 +958,21 @@ function openTestimonialModal(item = null) {
             <div class="form-group"><label>Urutan</label><input type="number" id="m-testi-order" value="${item ? item.sort_order : testiData.length + 1}"></div>
         </div>
         <div class="btn-row">
-            <button class="btn btn-gold" onclick="saveTestimonial(${item ? item.id : 'null'})"><i class="fas fa-save"></i> Simpan</button>
+            <button class="btn btn-gold" onclick="saveTestimonial('${item ? item.id : ''}')"><i class="fas fa-save"></i> Simpan</button>
             <button class="btn btn-ghost" onclick="closeModal()">Batal</button>
         </div>`;
     openModal();
 }
 function editTestimonial(id) { openTestimonialModal(testiData.find(t => t.id === id)); }
 async function saveTestimonial(id) {
-    const data = { quote: gv('m-testi-quote'), name: gv('m-testi-name'), role: gv('m-testi-role'), avatar_letter: gv('m-testi-avatar'), sort_order: parseInt(gv('m-testi-order')) || 0 };
-    if (id) await api('/api/testimonials/' + id, { method:'PUT', body: JSON.stringify(data) });
-    else await api('/api/testimonials', { method:'POST', body: JSON.stringify(data) });
-    closeModal(); loadTestimonials(); toast('Testimoni berhasil disimpan!');
+    try {
+        const data = { quote: gv('m-testi-quote'), name: gv('m-testi-name'), role: gv('m-testi-role'), avatar_letter: gv('m-testi-avatar'), sort_order: parseInt(gv('m-testi-order')) || 0 };
+        if (id) await api('/api/testimonials/' + id, { method:'PUT', body: JSON.stringify(data) });
+        else await api('/api/testimonials', { method:'POST', body: JSON.stringify(data) });
+        closeModal(); loadTestimonials(); toast('Testimoni berhasil disimpan!');
+    } catch(err) { toast(err.message, 'error'); }
 }
-async function deleteTestimonial(id) { if(confirm('Hapus testimoni ini?')) { await api('/api/testimonials/'+id, {method:'DELETE'}); loadTestimonials(); toast('Testimoni dihapus','error'); }}
+async function deleteTestimonial(id) { try { if(confirm('Hapus testimoni ini?')) { await api('/api/testimonials/'+id, {method:'DELETE'}); loadTestimonials(); toast('Testimoni dihapus','error'); } } catch(err) { toast(err.message, 'error'); } }
 
 // ─── CTA ─────────────────────────────────────────────────────────
 async function loadCta() {
@@ -947,9 +980,11 @@ async function loadCta() {
     fillForm('cta', d);
 }
 async function saveCta() {
-    const fields = ['eyebrow','title_1','title_2','subtitle'];
-    await api('/api/cta', { method:'PUT', body: JSON.stringify(collectForm('cta', fields)) });
-    toast('CTA berhasil disimpan!');
+    try {
+        const fields = ['eyebrow','title_1','title_2','subtitle'];
+        await api('/api/cta', { method:'PUT', body: JSON.stringify(collectForm('cta', fields)) });
+        toast('CTA berhasil disimpan!');
+    } catch(err) { toast(err.message, 'error'); }
 }
 
 // ─── SOCIALS ─────────────────────────────────────────────────────
@@ -958,9 +993,11 @@ async function loadSocials() {
     fillForm('socials', d);
 }
 async function saveSocials() {
-    const fields = ['whatsapp','instagram','tiktok','phone_display'];
-    await api('/api/socials', { method:'PUT', body: JSON.stringify(collectForm('socials', fields)) });
-    toast('Sosial media berhasil disimpan!');
+    try {
+        const fields = ['whatsapp','instagram','tiktok','phone_display'];
+        await api('/api/socials', { method:'PUT', body: JSON.stringify(collectForm('socials', fields)) });
+        toast('Sosial media berhasil disimpan!');
+    } catch(err) { toast(err.message, 'error'); }
 }
 
 // ─── PASSWORD ────────────────────────────────────────────────────
@@ -982,7 +1019,10 @@ function openModal() { document.getElementById('modalOverlay').classList.add('op
 function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
 
 // ─── HELPER ──────────────────────────────────────────────────────
-function gv(id) { return document.getElementById(id).value; }
+function gv(id) { 
+    let el = document.getElementById(id);
+    return el ? el.value : '';
+}
 
 // ─── INIT ────────────────────────────────────────────────────────
 checkAuth();
