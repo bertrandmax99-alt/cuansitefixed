@@ -18,5 +18,8 @@
     "multer": "^1.4.5-lts.1",
     "netlify-cli": "^25.0.0",
     "serverless-http": "^4.0.0"
+  },
+  "overrides": {
+    "fetch-blob": "3.1.2"
   }
 }

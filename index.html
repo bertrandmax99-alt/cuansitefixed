@@ -2203,34 +2203,10 @@
             );
         });
 
-        // Service cards stagger
-        gsap.from('.svc-card', {
-            opacity:0, y:70, scale:.94, duration:.9, stagger:.1, ease:'power3.out',
-            scrollTrigger:{ trigger:'.services-grid', start:'top 85%', toggleActions:'play none none none' }
-        });
-
-        // Portfolio cards
-        gsap.from('.port-card', {
-            opacity:0, y:80, duration:1, stagger:.2, ease:'power3.out',
-            scrollTrigger:{ trigger:'.portfolio-grid', start:'top 85%', toggleActions:'play none none none' }
-        });
-
         // Results counter section
         gsap.from('.result-item', {
             opacity:0, y:40, duration:.7, stagger:.1, ease:'power3.out',
             scrollTrigger:{ trigger:'.results-grid', start:'top 82%', toggleActions:'play none none none' }
-        });
-
-        // Testimonials
-        gsap.from('.testi-card', {
-            opacity:0, y:45, duration:.75, stagger:.1, ease:'power3.out',
-            scrollTrigger:{ trigger:'.testi-grid', start:'top 82%', toggleActions:'play none none none' }
-        });
-
-        // Process steps
-        gsap.from('.proc-step', {
-            opacity:0, y:50, duration:.7, stagger:.12, ease:'power3.out',
-            scrollTrigger:{ trigger:'.process-timeline', start:'top 82%', toggleActions:'play none none none' }
         });
 
         // Float badges
@@ -2379,7 +2355,7 @@
     /* ─── DYNAMIC CONTENT LOADING FROM API ────────────────────────────── */
     (async function loadDynamicContent() {
         try {
-            const res = await fetch('/api/content');
+            const res = await fetch('/api/content?_t=' + new Date().getTime(), { cache: 'no-store' });
             if (!res.ok) return; // static fallback if no server
             const d = await res.json();
             const esc = s => s || '';
@@ -2497,17 +2473,21 @@
             }
 
             // ── Services ──
-            if (d.services && d.services.length) {
-                const grid = document.querySelector('.services-grid');
-                grid.innerHTML = d.services.map((s, i) => `
-                    <div class="svc-card" data-hover>
-                        <div class="svc-num">${String(i + 1).padStart(2, '0')}</div>
-                        <div class="svc-icon"><i class="${esc(s.icon)}"></i></div>
-                        <h3>${esc(s.title)}</h3>
-                        <p>${esc(s.description)}</p>
-                        ${s.tag ? '<div class="svc-tag">' + esc(s.tag) + '</div>' : ''}
-                    </div>`).join('');
-                initTiltEffects();
+            try {
+                if (d.services && d.services.length) {
+                    const grid = document.querySelector('.services-grid');
+                    grid.innerHTML = d.services.map((s, i) => `
+                        <div class="svc-card" data-hover>
+                            <div class="svc-num">${String(i + 1).padStart(2, '0')}</div>
+                            <div class="svc-icon"><i class="${esc(s.icon)}"></i></div>
+                            <h3>${esc(s.title)}</h3>
+                            <p>${esc(s.description)}</p>
+                            ${s.tag ? '<div class="svc-tag">' + esc(s.tag) + '</div>' : ''}
+                        </div>`).join('');
+                    initTiltEffects();
+                }
+            } catch (e) {
+                console.error("Error loading services:", e);
             }
 
             // ── Why Items ──
@@ -2538,10 +2518,8 @@
                 grid.innerHTML = d.portfolio.map(p => {
                     const tags = (p.tags || '').split(',').filter(Boolean).map(t => '<span>' + t.trim() + '</span>').join('');
                     const screenshotStr = (p.screenshot || '').toString().trim();
-                    const hasScreenshot = screenshotStr.length > 0 && screenshotStr.startsWith('/');
-                    const screenshotHtml = hasScreenshot
-                        ? `<img src="${screenshotStr}" alt="${esc(p.client_name)}" onerror="this.style.display='none'">`
-                        : `<div class="port-browser">
+                    const hasScreenshot = screenshotStr.length > 0;
+                    const mockupHtml = `<div class="port-browser">
                             <div class="port-browser-bar">
                                 <div class="port-browser-dot" style="background:#ff5f57;"></div>
                                 <div class="port-browser-dot" style="background:#ffbd2e;"></div>
@@ -2556,6 +2534,10 @@
                                 <div class="port-block"><div class="port-block-item"></div><div class="port-block-item"></div></div>
                             </div>
                           </div>`;
+
+                    const screenshotHtml = hasScreenshot
+                        ? `${mockupHtml}<img src="${screenshotStr}" alt="${esc(p.client_name)}" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:5;" onerror="this.style.display='none'">`
+                        : mockupHtml;
 
                     return `<div class="port-card">
                         <div class="port-preview">
@@ -2623,7 +2605,45 @@
                 observer.observe(counter);
             });
 
+            // Re-trigger scroll animations for newly generated items to prevent layout/opacity bugs
+            if (window.ScrollTrigger) {
+                setTimeout(() => ScrollTrigger.refresh(), 100);
+            }
+
+            // Ensure the newly created cards are visible! 
+            // We animate them in cleanly using ScrollTrigger to avoid overlapping/stuck opacity issues.
+            gsap.fromTo('.portfolio-grid .port-card', 
+                { opacity: 0, y: 40 }, 
+                { opacity: 1, y: 0, duration: 0.8, stagger: 0.15, ease: 'power3.out', clearProps: "all", scrollTrigger: { trigger: '.portfolio-grid', start: 'top 85%', toggleActions: 'play none none none' } }
+            );
+
+            gsap.fromTo('.services-grid .svc-card', 
+                { opacity: 0, y: 70, scale: 0.94 }, 
+                { opacity: 1, y: 0, scale: 1, duration: 0.9, stagger: 0.1, ease: 'power3.out', clearProps: "all", scrollTrigger: { trigger: '.services-grid', start: 'top 85%', toggleActions: 'play none none none' } }
+            );
+
+            gsap.fromTo('.why-list .why-item', 
+                { opacity: 0, x: 50 }, 
+                { opacity: 1, x: 0, duration: 0.8, stagger: 0.1, ease: 'power3.out', clearProps: "all", scrollTrigger: { trigger: '.why-list', start: 'top 85%', toggleActions: 'play none none none' } }
+            );
+
+            gsap.fromTo('.process-timeline .proc-step', 
+                { opacity: 0, y: 50 }, 
+                { opacity: 1, y: 0, duration: 0.7, stagger: 0.12, ease: 'power3.out', clearProps: "all", scrollTrigger: { trigger: '.process-timeline', start: 'top 82%', toggleActions: 'play none none none' } }
+            );
+
+            gsap.fromTo('.testi-grid .testi-card', 
+                { opacity: 0, y: 45 }, 
+                { opacity: 1, y: 0, duration: 0.75, stagger: 0.1, ease: 'power3.out', clearProps: "all", scrollTrigger: { trigger: '.testi-grid', start: 'top 82%', toggleActions: 'play none none none' } }
+            );
+
+            // Re-bind hover tilt effects to newly fetched cards
+            if (typeof initTiltEffects === 'function') {
+                initTiltEffects();
+            }
+
         } catch(e) {
+            console.error("Content Load Error:", e);
             // No server running - use static HTML fallback (no-op)
         }
     })();

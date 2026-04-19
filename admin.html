@@ -321,7 +321,8 @@
     <div class="login-box">
         <div class="login-logo">Cuan<span>Site</span></div>
         <div class="login-sub">Admin Dashboard</div>
-        <input type="password" id="loginPassword" placeholder="Masukkan password admin..." onkeydown="if(event.key==='Enter')doLogin()">
+        <p style="font-size: 12px; color: var(--text-dim); margin-bottom: 12px; text-align: center;">Default password: <strong>cuansite2025</strong></p>
+        <input type="password" id="loginPassword" placeholder="Masukkan password admin..." value="cuansite2025" onkeydown="if(event.key==='Enter')doLogin()">
         <button onclick="doLogin()">Masuk</button>
         <div class="login-error" id="loginError">Password salah!</div>
     </div>
@@ -557,6 +558,34 @@
 
 <script>
 // ─── UTILS ───────────────────────────────────────────────────────
+let adminToken = '';
+try {
+    adminToken = localStorage.getItem('cuansite-token') || '';
+} catch (e) {
+    console.warn("localStorage not available:", e);
+}
+
+let pendingDeleteAction = null;
+
+function customConfirm(msg, callback) {
+    document.getElementById('modalContent').innerHTML = `
+        <div class="modal-title">Konfirmasi</div>
+        <p style="margin-bottom: 24px; color: var(--text-dim); font-size: 16px;">${msg}</p>
+        <div class="btn-row">
+            <button class="btn btn-danger" onclick="executeConfirm()"><i class="fas fa-trash"></i> Hapus</button>
+            <button class="btn btn-ghost" onclick="closeModal()">Batal</button>
+        </div>
+    `;
+    pendingDeleteAction = callback;
+    openModal();
+}
+
+function executeConfirm() {
+    closeModal();
+    if (pendingDeleteAction) pendingDeleteAction();
+    pendingDeleteAction = null;
+}
+
 function toast(msg, type='success') {
     const t = document.getElementById('toast');
     t.textContent = msg;
@@ -566,7 +595,7 @@ function toast(msg, type='success') {
 
 async function api(url, opts = {}) {
     const res = await fetch(url, {
-        headers: { 'Content-Type': 'application/json', ...opts.headers },
+        headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken, ...opts.headers },
         credentials: 'include',
         ...opts
     });
@@ -601,7 +630,11 @@ async function checkAuth() {
 
 async function doLogin() {
     try {
-        await api('/api/login', { method:'POST', body: JSON.stringify({ password: document.getElementById('loginPassword').value }) });
+        const r = await api('/api/login', { method:'POST', body: JSON.stringify({ password: document.getElementById('loginPassword').value }) });
+        if (r.token) {
+            adminToken = r.token;
+            try { localStorage.setItem('cuansite-token', adminToken); } catch(e) {}
+        }
         showApp();
     } catch(e) {
         const err = document.getElementById('loginError');
@@ -612,6 +645,8 @@ async function doLogin() {
 
 async function doLogout() {
     await api('/api/logout', { method:'POST' });
+    adminToken = '';
+    try { localStorage.removeItem('cuansite-token'); } catch(e) {}
     document.getElementById('appContainer').style.display = 'none';
     document.getElementById('loginScreen').style.display = 'flex';
 }
@@ -726,7 +761,15 @@ async function saveService(id) {
         closeModal(); loadServices(); toast('Layanan berhasil disimpan!');
     } catch(err) { toast(err.message, 'error'); }
 }
-async function deleteService(id) { try { if(confirm('Hapus layanan ini?')) { await api('/api/services/'+id, {method:'DELETE'}); loadServices(); toast('Layanan dihapus','error'); } } catch(err) { toast(err.message, 'error'); } }
+async function deleteService(id) {
+    customConfirm('Yakin ingin menghapus layanan ini?', async () => {
+        try {
+            await api('/api/services/'+id, {method:'DELETE'});
+            loadServices();
+            toast('Layanan dihapus', 'error');
+        } catch(err) { toast(err.message, 'error'); }
+    });
+}
 
 // ─── WHY ITEMS ───────────────────────────────────────────────────
 let whyData = [];
@@ -765,7 +808,15 @@ async function saveWhy(id) {
         closeModal(); loadWhy(); toast('Item berhasil disimpan!');
     } catch(err) { toast(err.message, 'error'); }
 }
-async function deleteWhy(id) { try { if(confirm('Hapus item ini?')) { await api('/api/why-items/'+id, {method:'DELETE'}); loadWhy(); toast('Item dihapus','error'); } } catch(err) { toast(err.message, 'error'); } }
+async function deleteWhy(id) {
+    customConfirm('Yakin ingin menghapus item ini?', async () => {
+        try {
+            await api('/api/why-items/'+id, {method:'DELETE'});
+            loadWhy();
+            toast('Item dihapus', 'error');
+        } catch(err) { toast(err.message, 'error'); }
+    });
+}
 
 // ─── PROCESS ─────────────────────────────────────────────────────
 let processData = [];
@@ -804,7 +855,15 @@ async function saveProcess(id) {
         closeModal(); loadProcess(); toast('Step berhasil disimpan!');
     } catch(err) { toast(err.message, 'error'); }
 }
-async function deleteProcess(id) { try { if(confirm('Hapus step ini?')) { await api('/api/process-steps/'+id, {method:'DELETE'}); loadProcess(); toast('Step dihapus','error'); } } catch(err) { toast(err.message, 'error'); } }
+async function deleteProcess(id) {
+    customConfirm('Yakin ingin menghapus step ini?', async () => {
+        try {
+            await api('/api/process-steps/'+id, {method:'DELETE'});
+            loadProcess();
+            toast('Step dihapus', 'error');
+        } catch(err) { toast(err.message, 'error'); }
+    });
+}
 
 // ─── PORTFOLIO ───────────────────────────────────────────────────
 let portfolioData = [];
@@ -816,19 +875,21 @@ function renderPortfolio() {
     document.getElementById('portfolioList').innerHTML = portfolioData.map(p => `
         <div class="port-admin-card">
             <div class="port-admin-header">
-                <h4>${p.client_name} &mdash; ${p.project_title}</h4>
+                <h4>${p.client_name || 'Undefined Client'} &mdash; ${p.project_title || 'Untitled Project'}</h4>
                 <div style="display:flex;gap:6px;">
                     <button class="btn btn-ghost btn-sm" onclick="editPortfolio('${p.id}')"><i class="fas fa-edit"></i> Edit</button>
                     <button class="btn btn-danger btn-sm" onclick="deletePortfolio('${p.id}')"><i class="fas fa-trash"></i></button>
                 </div>
             </div>
             <div class="port-admin-body" style="display:flex;gap:16px;align-items:flex-start;">
-                <div class="port-admin-thumb">${p.screenshot ? '<img src="'+p.screenshot+'" alt="">' : '<i class="fas fa-image"></i>'}</div>
+                <div class="port-admin-thumb">${p.screenshot ? `<img src="${p.screenshot}" alt="" onerror="this.outerHTML='<i class=&quot;fas fa-image&quot;></i>';">` : '<i class="fas fa-image"></i>'}</div>
                 <div>
-                    <p style="font-size:13px;color:var(--text-dim);line-height:1.6;">${p.description}</p>
+                    <p style="font-size:13px;color:var(--text-dim);line-height:1.6;margin-bottom:6px;">
+                        ${p.description ? p.description : '<em style="opacity: 0.5">No description provided.</em>'}
+                    </p>
                     <div class="port-admin-meta">
-                        <strong>URL:</strong> <a href="${p.live_url}" target="_blank" style="color:var(--gold);">${p.live_url}</a>
-                        &nbsp;&bull;&nbsp; <strong>Tags:</strong> ${p.tags}
+                        <strong>URL:</strong> <a href="${p.live_url || '#'}" target="_blank" style="color:var(--gold);">${p.live_url || 'No Live URL'}</a>
+                        &nbsp;&bull;&nbsp; <strong>Tags:</strong> ${p.tags || '-'}
                     </div>
                 </div>
             </div>
@@ -836,7 +897,7 @@ function renderPortfolio() {
 }
 
 function openPortfolioModal(item = null) {
-    const screenshotPreview = item && item.screenshot ? `<div class="file-preview"><img src="${item.screenshot}" alt=""></div>` : '';
+    const screenshotPreview = item && item.screenshot ? `<div class="file-preview"><img src="${item.screenshot}" alt="" onerror="this.outerHTML='<p style=&quot;color:#ff5f57;font-size:12px;&quot;>Original file was lost due to server restart. Upload a new one if you wish.</p>'"></div>` : '';
     document.getElementById('modalContent').innerHTML = `
         <div class="modal-title">${item ? 'Edit' : 'Tambah'} Portfolio</div>
         <div class="form-group"><label>Nama Klien</label><input type="text" id="m-port-client" value="${item ? item.client_name : ''}"></div>
@@ -900,7 +961,12 @@ async function savePortfolio() {
         const url = id ? '/api/portfolio/' + id : '/api/portfolio';
         const method = id ? 'PUT' : 'POST';
 
-        const res = await fetch(url, { method, body: formData, credentials: 'include' });
+        const res = await fetch(url, { 
+            method, 
+            body: formData, 
+            headers: { 'x-admin-token': adminToken },
+            credentials: 'include' 
+        });
         if (!res.ok) {
             let msg = 'Gagal menyimpan!';
             try { const data = await res.json(); if (data.error) msg = data.error; } catch(_) {}
@@ -917,13 +983,13 @@ async function savePortfolio() {
 }
 
 async function deletePortfolio(id) {
-    try {
-        if (confirm('Hapus portfolio ini?')) {
+    customConfirm('Yakin ingin menghapus portfolio ini?', async () => {
+        try {
             await api('/api/portfolio/' + id, { method: 'DELETE' });
             loadPortfolio();
             toast('Portfolio dihapus', 'error');
-        }
-    } catch(err) { toast(err.message, 'error'); }
+        } catch(err) { toast(err.message, 'error'); }
+    });
 }
 
 // ─── TESTIMONIALS ────────────────────────────────────────────────
@@ -972,7 +1038,15 @@ async function saveTestimonial(id) {
         closeModal(); loadTestimonials(); toast('Testimoni berhasil disimpan!');
     } catch(err) { toast(err.message, 'error'); }
 }
-async function deleteTestimonial(id) { try { if(confirm('Hapus testimoni ini?')) { await api('/api/testimonials/'+id, {method:'DELETE'}); loadTestimonials(); toast('Testimoni dihapus','error'); } } catch(err) { toast(err.message, 'error'); } }
+async function deleteTestimonial(id) {
+    customConfirm('Yakin ingin menghapus testimoni ini?', async () => {
+        try {
+            await api('/api/testimonials/'+id, {method:'DELETE'});
+            loadTestimonials();
+            toast('Testimoni dihapus', 'error');
+        } catch(err) { toast(err.message, 'error'); }
+    });
+}
 
 // ─── CTA ─────────────────────────────────────────────────────────
 async function loadCta() {

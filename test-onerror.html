@@ -1,0 +1,10 @@
+<html>
+<body>
+  <div id="test"></div>
+  <script>
+    const mockupHtml = `<div class="port-browser">WORKS!</div>`;
+    const str = `<img src="notfound.png" onerror="this.outerHTML=decodeURIComponent('${encodeURIComponent(mockupHtml)}')">`;
+    document.getElementById('test').innerHTML = str;
+  </script>
+</body>
+</html>
