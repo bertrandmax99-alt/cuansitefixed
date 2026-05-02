@@ -327,11 +327,12 @@ app.post('/api/portfolio', requireAuth, handleUpload, async (req, res) => {
     let screenshot = '';
     if (req.file) {
       if (req.file.size > 10 * 1024 * 1024) throw new Error('File too large'); // 10MB limit
-      const ext = pathMod.extname(req.file.originalname);
-      const filename = 'portfolio-' + Date.now() + ext;
-      const filePath = pathMod.join(uploadsDir, filename);
-      fs.writeFileSync(filePath, req.file.buffer);
-      screenshot = '/uploads/' + filename;
+      const { Jimp } = require('jimp');
+      const image = await Jimp.read(req.file.buffer);
+      if (image.bitmap.width > 1200) {
+        image.resize({ w: 1200 });
+      }
+      screenshot = await image.getBase64('image/jpeg', { quality: 80 });
     }
     const docRef = await addDoc(collection(db, 'portfolio'), {
       ...p,
@@ -352,11 +353,12 @@ app.put('/api/portfolio/:id', requireAuth, handleUpload, async (req, res) => {
     let screenshot = p.existing_screenshot || '';
     if (req.file) {
       if (req.file.size > 10 * 1024 * 1024) throw new Error('File too large');
-      const ext = pathMod.extname(req.file.originalname);
-      const filename = 'portfolio-' + Date.now() + ext;
-      const filePath = pathMod.join(uploadsDir, filename);
-      fs.writeFileSync(filePath, req.file.buffer);
-      screenshot = '/uploads/' + filename;
+      const { Jimp } = require('jimp');
+      const image = await Jimp.read(req.file.buffer);
+      if (image.bitmap.width > 1200) {
+        image.resize({ w: 1200 });
+      }
+      screenshot = await image.getBase64('image/jpeg', { quality: 80 });
       
       if (p.existing_screenshot && p.existing_screenshot.includes('firebasestorage')) {
         try {

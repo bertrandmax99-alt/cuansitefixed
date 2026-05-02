@@ -1,18 +1,13 @@
-const { db, collection, addDoc, storage, ref, uploadBytes, getDownloadURL } = require('./firebase');
-
-async function test() {
+const { storage, ref, uploadBytes, getDownloadURL } = require('./firebase');
+async function run() {
   try {
-    const Buffer = require('buffer').Buffer;
-    const storageRef = ref(storage, 'test-' + Date.now() + '.txt');
-    const buffer = Buffer.from('test string content');
-    // Ensure we can stringify and parse Firebase buffer cleanly
-    await uploadBytes(storageRef, buffer, { contentType: 'text/plain' });
-    const url = await getDownloadURL(storageRef);
-    console.log("SUCCESS URL:", url);
-    process.exit(0);
-  } catch (err) {
-    console.error("FAIL:", err);
-    process.exit(1);
+    const fileRef = ref(storage, 'test-file.txt');
+    const data = new Uint8Array(Buffer.from('hello world'));
+    await uploadBytes(fileRef, data, { contentType: 'text/plain' });
+    const url = await getDownloadURL(fileRef);
+    console.log('Success:', url);
+  } catch (e) {
+    console.error('Error:', e);
   }
 }
-test();
+run();
